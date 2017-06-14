@@ -82,12 +82,12 @@ static void nl80211_handle_destroy(struct nl_handle *handle)
 #endif /* CONFIG_LIBNL20 */
 
 
-#ifdef ANDROID
+#if defined(ANDROID) && !defined(PURE_LINUX)
 /* system/core/libnl_2 does not include nl_socket_set_nonblocking() */
 #undef nl_socket_set_nonblocking
 #define nl_socket_set_nonblocking(h) android_nl_socket_set_nonblocking(h)
 
-#endif /* ANDROID */
+#endif /* ANDROID && !PURE_LINUX */
 
 
 static struct nl_handle * nl_create_handle(struct nl_cb *cb, const char *dbg)
@@ -6540,6 +6540,11 @@ static int nl80211_set_param(void *priv, const char *param)
 		return 0;
 
 #ifdef CONFIG_P2P
+#ifndef CONFIG_RTW_IGNORE_P2P_GROUP_INTERFACE
+	/*
+	 * no support  "driver_param=use_p2p_group_interface=1" option, 
+	 * ignore this setting and still use p2p0 as p2p interface.
+	 */
 	if (os_strstr(param, "use_p2p_group_interface=1")) {
 		struct i802_bss *bss = priv;
 		struct wpa_driver_nl80211_data *drv = bss->drv;
@@ -6549,6 +6554,7 @@ static int nl80211_set_param(void *priv, const char *param)
 		drv->capa.flags |= WPA_DRIVER_FLAGS_P2P_CONCURRENT;
 		drv->capa.flags |= WPA_DRIVER_FLAGS_P2P_MGMT_AND_NON_P2P;
 	}
+#endif /* CONFIG_RTW_IGNORE_P2P_GROUP_INTERFACE */
 #endif /* CONFIG_P2P */
 
 	if (os_strstr(param, "use_monitor=1")) {

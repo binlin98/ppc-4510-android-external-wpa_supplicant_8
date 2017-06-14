@@ -21,6 +21,11 @@ L_CFLAGS = -DWPA_IGNORE_CONFIG_ERRORS
 
 L_CFLAGS += -DVERSION_STR_POSTFIX=\"-$(PLATFORM_VERSION)\"
 
+# REALTEK
+ifeq ($(BOARD_WIFI_VENDOR), realtek)
+L_CFLAGS += -DREALTEK_WIFI_VENDOR
+endif
+
 # Set Android log name
 L_CFLAGS += -DANDROID_LOG_NAME=\"hostapd\"
 
@@ -30,6 +35,9 @@ L_CFLAGS += -Wno-unused-parameter
 # Set Android extended P2P functionality
 L_CFLAGS += -DANDROID_P2P
 
+ifeq ($(BOARD_HOSTAPD_PRIVATE_LIB),)
+L_CFLAGS += -DANDROID_LIB_STUB
+endif
 
 # Use Android specific directory for control interface sockets
 L_CFLAGS += -DCONFIG_CTRL_IFACE_CLIENT_DIR=\"/data/misc/wifi/sockets\"
@@ -919,7 +927,9 @@ LOCAL_MODULE_TAGS := optional
 ifdef CONFIG_DRIVER_CUSTOM
 LOCAL_STATIC_LIBRARIES := libCustomWifi
 endif
-LOCAL_STATIC_LIBRARIES += lib_driver_cmd_bcmdhd
+ifneq ($(BOARD_HOSTAPD_PRIVATE_LIB),)
+LOCAL_STATIC_LIBRARIES += $(BOARD_HOSTAPD_PRIVATE_LIB)
+endif
 LOCAL_SHARED_LIBRARIES := libc libcutils liblog libcrypto libssl
 ifdef CONFIG_DRIVER_NL80211
 ifneq ($(wildcard external/libnl),)
@@ -929,30 +939,6 @@ LOCAL_STATIC_LIBRARIES += libnl_2
 endif
 endif
 LOCAL_CFLAGS := $(L_CFLAGS)
-LOCAL_SRC_FILES := $(OBJS)
-LOCAL_C_INCLUDES := $(INCLUDES)
-include $(BUILD_EXECUTABLE)
-
-########################
-
-########################
-include $(CLEAR_VARS)
-LOCAL_MODULE := rtl_hostapd
-LOCAL_MODULE_TAGS := optional
-ifdef CONFIG_DRIVER_CUSTOM
-LOCAL_STATIC_LIBRARIES := libCustomWifi
-endif
-LOCAL_STATIC_LIBRARIES += lib_driver_cmd_rtl
-LOCAL_SHARED_LIBRARIES := libc libcutils liblog libcrypto libssl
-ifdef CONFIG_DRIVER_NL80211
-ifneq ($(wildcard external/libnl),)
-LOCAL_SHARED_LIBRARIES += libnl
-else
-LOCAL_STATIC_LIBRARIES += libnl_2
-endif
-endif
-LOCAL_CFLAGS := $(L_CFLAGS)
-LOCAL_CFLAGS += -DREALTEK_WIFI_VENDOR
 LOCAL_SRC_FILES := $(OBJS)
 LOCAL_C_INCLUDES := $(INCLUDES)
 include $(BUILD_EXECUTABLE)

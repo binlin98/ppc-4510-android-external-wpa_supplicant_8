@@ -19,6 +19,15 @@ L_CFLAGS = -DWPA_IGNORE_CONFIG_ERRORS
 
 L_CFLAGS += -DVERSION_STR_POSTFIX=\"-$(PLATFORM_VERSION)\"
 
+# REALTEK
+ifeq ($(BOARD_WIFI_VENDOR), realtek)
+L_CFLAGS += -DREALTEK_WIFI_VENDOR
+
+ifeq ($(CONFIG_RTW_IGNORE_P2P_GROUP_INTERFACE), y)
+L_CFLAGS += -DCONFIG_RTW_IGNORE_P2P_GROUP_INTERFACE
+endif
+endif
+
 # Set Android log name
 L_CFLAGS += -DANDROID_LOG_NAME=\"wpa_supplicant\"
 
@@ -27,6 +36,10 @@ L_CFLAGS += -Wno-unused-parameter
 
 # Set Android extended P2P functionality
 L_CFLAGS += -DANDROID_P2P
+
+ifeq ($(BOARD_WPA_SUPPLICANT_PRIVATE_LIB),)
+L_CFLAGS += -DANDROID_LIB_STUB
+endif
 
 # Disable roaming in wpa_supplicant
 ifdef CONFIG_NO_ROAMING
@@ -1550,47 +1563,14 @@ LOCAL_MODULE := wpa_supplicant
 ifdef CONFIG_DRIVER_CUSTOM
 LOCAL_STATIC_LIBRARIES := libCustomWifi
 endif
-LOCAL_STATIC_LIBRARIES += lib_driver_cmd_bcmdhd
-ifneq ($(BOARD_WPA_SUPPLICANT_PRIVATE_LIB_BCM),)
-LOCAL_STATIC_LIBRARIES += $(BOARD_WPA_SUPPLICANT_PRIVATE_LIB_BCM)
+ifneq ($(BOARD_WPA_SUPPLICANT_PRIVATE_LIB),)
+LOCAL_STATIC_LIBRARIES += $(BOARD_WPA_SUPPLICANT_PRIVATE_LIB)
 endif
 LOCAL_SHARED_LIBRARIES := libc libcutils liblog
 ifdef CONFIG_EAP_PROXY
 LOCAL_STATIC_LIBRARIES += $(LIB_STATIC_EAP_PROXY)
 LOCAL_SHARED_LIBRARIES += $(LIB_SHARED_EAP_PROXY)
 endif
-ifeq ($(CONFIG_TLS), openssl)
-LOCAL_SHARED_LIBRARIES += libcrypto libssl libkeystore_binder
-endif
-
-# With BoringSSL we need libkeystore-engine in order to provide access to
-# keystore keys.
-ifneq (,$(wildcard external/boringssl/flavor.mk))
-LOCAL_SHARED_LIBRARIES += libkeystore-engine
-endif
-
-ifdef CONFIG_DRIVER_NL80211
-ifneq ($(wildcard external/libnl),)
-LOCAL_SHARED_LIBRARIES += libnl
-else
-LOCAL_STATIC_LIBRARIES += libnl_2
-endif
-endif
-LOCAL_CFLAGS := $(L_CFLAGS)
-LOCAL_CFLAGS += -DBROADCOM_WIFI_VENDOR
-LOCAL_SRC_FILES := $(OBJS)
-LOCAL_C_INCLUDES := $(INCLUDES)
-include $(BUILD_EXECUTABLE)
-
-########################
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := rtl_wpa_supplicant
-ifdef CONFIG_DRIVER_CUSTOM
-LOCAL_STATIC_LIBRARIES := libCustomWifi
-endif
-LOCAL_STATIC_LIBRARIES += lib_driver_cmd_rtl
-LOCAL_SHARED_LIBRARIES := libc libcutils liblog
 ifeq ($(CONFIG_TLS), openssl)
 LOCAL_SHARED_LIBRARIES += libcrypto libssl libkeystore_binder
 endif
@@ -1627,16 +1607,16 @@ include $(BUILD_EXECUTABLE)
 #include $(BUILD_EXECUTABLE)
 #
 ########################
-ifeq ($(WPA_SUPPLICANT_VERSION),$(filter $(WPA_SUPPLICANT_VERSION),VER_0_8_UNITE))
-local_target_dir := $(TARGET_OUT)/etc/wifi
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := wpa_supplicant.conf
-LOCAL_MODULE_CLASS := ETC
-LOCAL_MODULE_PATH := $(local_target_dir)
-LOCAL_SRC_FILES := $(LOCAL_MODULE)
-include $(BUILD_PREBUILT)
-endif
+#
+#local_target_dir := $(TARGET_OUT)/etc/wifi
+#
+#include $(CLEAR_VARS)
+#LOCAL_MODULE := wpa_supplicant.conf
+#LOCAL_MODULE_CLASS := ETC
+#LOCAL_MODULE_PATH := $(local_target_dir)
+#LOCAL_SRC_FILES := $(LOCAL_MODULE)
+#include $(BUILD_PREBUILT)
+#
 ########################
 
 include $(CLEAR_VARS)
