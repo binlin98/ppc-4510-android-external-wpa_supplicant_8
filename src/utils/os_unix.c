@@ -12,13 +12,9 @@
 #include <sys/wait.h>
 
 #ifdef ANDROID
-#ifndef PURE_LINUX
 #include <sys/capability.h>
-#endif /* !PURE_LINUX */
 #include <sys/prctl.h>
-#ifndef PURE_LINUX
 #include <private/android_filesystem_config.h>
-#endif /* !PURE_LINUX */
 #endif /* ANDROID */
 
 #include "os.h"
@@ -297,7 +293,7 @@ char * os_rel2abs_path(const char *rel_path)
 
 int os_program_init(void)
 {
-#if defined(ANDROID) && !defined(PURE_LINUX)
+#ifdef ANDROID
 	/*
 	 * We ignore errors here since errors are normal if we
 	 * are already running as non-root.
@@ -323,7 +319,7 @@ int os_program_init(void)
 		(1 << CAP_NET_ADMIN) | (1 << CAP_NET_RAW);
 	cap.inheritable = 0;
 	capset(&header, &cap);
-#endif /* ANDROID && !PURE_LINUX */
+#endif /* ANDROID */
 
 	return 0;
 }
